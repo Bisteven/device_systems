@@ -157,7 +157,7 @@ Documentación alternativa disponible en `/redoc`.
 { "id": 1, "name": "Carlos Mendoza V2", "email": "carlos.v2@devicesystems.com", "role": "admin", "is_active": true }
 ```
 
-(capturas/07_put.png)
+![PUT](capturas/07_put.png)
 
 ### PATCH /users/2
 **Body:**
@@ -169,7 +169,7 @@ Documentación alternativa disponible en `/redoc`.
 { "id": 2, "name": "Laura Ríos", "email": "laura@devicesystems.com", "role": "admin", "is_active": true }
 ```
 
-(capturas/08_patch.png)
+![PATCH](capturas/08_patch.png)
 
 
 ### DELETE /users/3
@@ -178,7 +178,7 @@ Documentación alternativa disponible en `/redoc`.
 { "error": false, "message": "Usuario con ID 3 eliminado correctamente.", "status_code": 200 }
 ```
 
-(capturas/09_delete.png)
+![DELETE](capturas/09_delete.png)
 
 ---
 
