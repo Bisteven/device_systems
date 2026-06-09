@@ -146,19 +146,8 @@ Documentación alternativa disponible en `/redoc`.
 
 ![GET filtro activo](capturas/06_get_filtro_activo.png)
 
-### POST /users/
-**Body:**
-```json
-{ "name": "Ana García", "email": "ana@devicesystems.com", "role": "user", "is_active": true }
-```
-**Respuesta 201:**
-```json
-{ "id": 5, "name": "Ana García", "email": "ana@devicesystems.com", "role": "user", "is_active": true }
-```
 
-> **Captura POST — pendiente de agregar**
-
-### PUT /users/1
+### PUT /users/1 
 **Body:**
 ```json
 { "name": "Carlos Mendoza V2", "email": "carlos.v2@devicesystems.com", "role": "admin", "is_active": true }
@@ -168,7 +157,7 @@ Documentación alternativa disponible en `/redoc`.
 { "id": 1, "name": "Carlos Mendoza V2", "email": "carlos.v2@devicesystems.com", "role": "admin", "is_active": true }
 ```
 
-> **Captura PUT — pendiente de agregar**
+(capturas/07_put.png)
 
 ### PATCH /users/2
 **Body:**
@@ -180,7 +169,8 @@ Documentación alternativa disponible en `/redoc`.
 { "id": 2, "name": "Laura Ríos", "email": "laura@devicesystems.com", "role": "admin", "is_active": true }
 ```
 
-> **Captura PATCH — pendiente de agregar**
+(capturas/08_patch.png)
+
 
 ### DELETE /users/3
 **Respuesta 200:**
@@ -188,45 +178,9 @@ Documentación alternativa disponible en `/redoc`.
 { "error": false, "message": "Usuario con ID 3 eliminado correctamente.", "status_code": 200 }
 ```
 
-> **Captura DELETE — pendiente de agregar**
+(capturas/09_delete.png)
 
 ---
-
-## Escenarios de error probados
-
-### Usuario no encontrado (404)
-```bash
-GET /users/999
-```
-```json
-{ "detail": { "error": true, "message": "No existe un usuario con ID 999.", "status_code": 404 } }
-```
-
-### Correo duplicado (400)
-```bash
-POST /users/ con email ya existente
-```
-```json
-{ "detail": { "error": true, "message": "El correo 'carlos@devicesystems.com' ya está registrado.", "status_code": 400 } }
-```
-
-### PATCH vacío (400)
-```bash
-PATCH /users/1 con body {}
-```
-```json
-{ "detail": { "error": true, "message": "Debes enviar al menos un campo para actualizar.", "status_code": 400 } }
-```
-
-### Datos inválidos (422)
-```bash
-POST /users/ con email mal formado
-```
-```json
-{ "detail": [ { "loc": ["body", "email"], "msg": "value is not a valid email address", "type": "value_error" } ] }
-```
-
-> **Capturas de errores — pendiente de agregar**
 
 ---
 
