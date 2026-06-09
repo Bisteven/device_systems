@@ -229,6 +229,4 @@ Los casos controlados son: usuario no encontrado, correo duplicado, rol no permi
 
 ---
 
-## Reflexión final
-
-La evolución de la API desde la versión 1.0 a la 2.0 demostró cómo una API básica puede convertirse en una solución más profesional sin cambiar su estructura exterior. Separar la lógica en capas (routes → services → data) hace el código más fácil de mantener y probar. El uso de `Depends()` eliminó código repetido en los endpoints y dejó cada función con una sola responsabilidad. El manejo explícito de errores con respuestas estructuradas también mejoró la claridad para quien consuma la API.
+##link youtube:
