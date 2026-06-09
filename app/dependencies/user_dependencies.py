@@ -5,9 +5,8 @@ Centraliza la validación de IDs, correos y roles para ser inyectada en los endp
 
 from fastapi import Depends, Header, HTTPException, Path, status
 from app.data.users_db import users_db
-from app.schemas.user_schema import ROLES_VALIDOS  # type: ignore[attr-defined]
 
-# Roles permitidos (se redefinen aquí para poder importarlas directamente)
+# Roles permitidos
 _ROLES_VALIDOS = {"admin", "support", "user"}
 
 # Cabecera de autenticación simulada
