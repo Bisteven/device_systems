@@ -1,5 +1,5 @@
 """
-main.py - Punto de entrada de la API device_systems.
+main.py - Punto de entrada de la API device_systems v2.
 Inicializa FastAPI, registra los routers y configura metadatos de la documentación.
 """
 
@@ -10,9 +10,10 @@ app = FastAPI(
     title="device_systems API",
     description=(
         "API REST para la gestión de usuarios del sistema **device_systems**. "
-        "Permite registrar, consultar y filtrar usuarios con validación de datos mediante Pydantic v2."
+        "Implementa CRUD completo con validación Pydantic v2, manejo de errores, "
+        "códigos HTTP correctos y Dependency Injection con `Depends()`."
     ),
-    version="1.0.0",
+    version="2.0.0",
     contact={
         "name": "device_systems Team",
         "email": "soporte@devicesystems.com",
@@ -31,7 +32,8 @@ def root() -> dict:
     """Endpoint de bienvenida — verifica que el servidor esté en línea."""
     return {
         "app": "device_systems",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "online",
         "docs": "/docs",
+        "redoc": "/redoc",
     }

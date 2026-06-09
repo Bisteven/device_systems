@@ -1,26 +1,43 @@
 # device_systems API
 
 API REST construida con **FastAPI** para la gestión de usuarios del sistema `device_systems`.  
-Aplica validación de datos con **Pydantic v2**, response models, path/query parameters y cabeceras HTTP personalizadas.
+La versión 2.0 implementa **CRUD completo**, manejo profesional de errores, Dependency Injection con `Depends()`, documentación Swagger/OpenAPI mejorada y estructura modular.
 
 ---
 
 ## Estructura del proyecto
+
+```
 device_systems/
 ├── app/
-│   ├── main.py                 # Punto de entrada, instancia FastAPI
+│   ├── main.py                       # Punto de entrada, instancia FastAPI v2
+│   ├── routes/
+│   │   └── user_routes.py            # Endpoints GET, POST, PUT, PATCH, DELETE
 │   ├── schemas/
-│   │   └── user_schema.py      # Modelos Pydantic (UserCreate, UserResponse)
-│   └── routes/
-│       └── user_routes.py      # Endpoints GET y POST de /users
+│   │   └── user_schema.py            # Modelos Pydantic (UserCreate, UserUpdate, UserResponse)
+│   ├── services/
+│   │   └── user_service.py           # Lógica de negocio (CRUD)
+│   ├── dependencies/
+│   │   └── user_dependencies.py      # Dependencias reutilizables con Depends()
+│   └── data/
+│       └── users_db.py               # Base de datos en memoria
 ├── requirements.txt
 ├── .gitignore
-└── README.md
-|
+├── README.md
 └── capturas/
+```
 
+---
 
+## Tecnologías utilizadas
 
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Python | 3.11+ | Lenguaje base |
+| FastAPI | 0.110+ | Framework web |
+| Uvicorn | 0.29+ | Servidor ASGI |
+| Pydantic v2 | 2.x | Validación de datos |
+| Git | — | Control de versiones |
 
 ---
 
@@ -37,9 +54,8 @@ python -m venv venv
 source venv/bin/activate        # macOS/Linux
 
 # 3. Instalar dependencias
-python -m pip install fastapi uvicorn "pydantic[email]" --only-binary=:all:
+pip install -r requirements.txt
 ```
-
 
 ![Instalación de dependencias](capturas/01_instalacion.png)
 
@@ -52,7 +68,8 @@ python -m uvicorn app.main:app --reload
 ```
 
 La API estará disponible en: `http://127.0.0.1:8000`  
-Documentación interactiva: `http://127.0.0.1:8000/docs`
+Documentación Swagger: `http://127.0.0.1:8000/docs`  
+Documentación ReDoc: `http://127.0.0.1:8000/redoc`
 
 ![Servidor corriendo](capturas/02_servidor.png)
 
@@ -62,124 +79,202 @@ Documentación interactiva: `http://127.0.0.1:8000/docs`
 
 Interfaz interactiva generada automáticamente por FastAPI en `/docs`.
 
+![Swagger UI (v1)](capturas/03_swagger_general.png)
 
-![Swagger UI](capturas/03_swagger_general.png)
+> **Captura v2 — pendiente de agregar:**
+> _(Toma una captura del nuevo Swagger con todos los endpoints PUT, PATCH y DELETE visibles y agrégala aquí)_
+
+---
+
+## ReDoc
+
+Documentación alternativa disponible en `/redoc`.
+
+> **Captura ReDoc — pendiente de agregar:**
+> _(Toma una captura de `/redoc` y agrégala aquí)_
 
 ---
 
 ## Endpoints
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/` | Estado del servicio |
-| GET | `/users/` | Listar todos los usuarios |
-| GET | `/users/{user_id}` | Obtener usuario por ID |
-| GET | `/users/?role=admin` | Filtrar por rol |
-| GET | `/users/?is_active=true` | Filtrar por estado |
-| POST | `/users/` | Registrar nuevo usuario |
+| Método | Ruta | Código éxito | Descripción |
+|--------|------|--------------|-------------|
+| GET | `/` | 200 OK | Estado del servicio |
+| GET | `/users/` | 200 OK | Listar todos los usuarios |
+| GET | `/users/{user_id}` | 200 OK | Obtener usuario por ID |
+| GET | `/users/?role=admin` | 200 OK | Filtrar por rol |
+| GET | `/users/?is_active=true` | 200 OK | Filtrar por estado |
+| POST | `/users/` | 201 Created | Registrar nuevo usuario |
+| PUT | `/users/{user_id}` | 200 OK | Reemplazar usuario completo |
+| PATCH | `/users/{user_id}` | 200 OK | Actualizar campos parciales |
+| DELETE | `/users/{user_id}` | 200 OK | Eliminar usuario |
+
+### Códigos de error
+
+| Código | Situación |
+|--------|-----------|
+| 400 Bad Request | Correo duplicado, rol inválido, PATCH sin campos |
+| 401 Unauthorized | Token de autenticación inválido (dependencia simulada) |
+| 404 Not Found | Usuario no encontrado por ID |
+| 422 Unprocessable Entity | Datos inválidos (validación Pydantic) |
 
 ---
 
-## Pruebas de endpoints
+## Ejemplos de peticiones y respuestas
 
-### GET /users/ — Listar todos los usuarios
-
-```http
-GET http://127.0.0.1:8000/users/
+### GET /users/
+```json
+[
+  { "id": 1, "name": "Carlos Mendoza", "email": "carlos@devicesystems.com", "role": "admin", "is_active": true },
+  { "id": 2, "name": "Laura Ríos", "email": "laura@devicesystems.com", "role": "support", "is_active": true }
+]
 ```
 
-![GET /users/](capturas/04_get_users.png)
+![GET /users](capturas/04_get_users.png)
+
+### GET /users/1
+```json
+{ "id": 1, "name": "Carlos Mendoza", "email": "carlos@devicesystems.com", "role": "admin", "is_active": true }
+```
+
+![GET /users/{id}](capturas/05_get_user_id.png)
+
+### GET /users/?is_active=true
+```json
+[ ... usuarios activos ... ]
+```
+
+![GET filtro activo](capturas/06_get_filtro_activo.png)
+
+### POST /users/
+**Body:**
+```json
+{ "name": "Ana García", "email": "ana@devicesystems.com", "role": "user", "is_active": true }
+```
+**Respuesta 201:**
+```json
+{ "id": 5, "name": "Ana García", "email": "ana@devicesystems.com", "role": "user", "is_active": true }
+```
+
+> **Captura POST — pendiente de agregar**
+
+### PUT /users/1
+**Body:**
+```json
+{ "name": "Carlos Mendoza V2", "email": "carlos.v2@devicesystems.com", "role": "admin", "is_active": true }
+```
+**Respuesta 200:**
+```json
+{ "id": 1, "name": "Carlos Mendoza V2", "email": "carlos.v2@devicesystems.com", "role": "admin", "is_active": true }
+```
+
+> **Captura PUT — pendiente de agregar**
+
+### PATCH /users/2
+**Body:**
+```json
+{ "role": "admin" }
+```
+**Respuesta 200:**
+```json
+{ "id": 2, "name": "Laura Ríos", "email": "laura@devicesystems.com", "role": "admin", "is_active": true }
+```
+
+> **Captura PATCH — pendiente de agregar**
+
+### DELETE /users/3
+**Respuesta 200:**
+```json
+{ "error": false, "message": "Usuario con ID 3 eliminado correctamente.", "status_code": 200 }
+```
+
+> **Captura DELETE — pendiente de agregar**
 
 ---
 
-### GET /users/{user_id} — Obtener usuario por ID
+## Escenarios de error probados
 
-```http
-GET http://127.0.0.1:8000/users/1
+### Usuario no encontrado (404)
+```bash
+GET /users/999
+```
+```json
+{ "detail": { "error": true, "message": "No existe un usuario con ID 999.", "status_code": 404 } }
 ```
 
-![GET /users/1](capturas/05_get_user_id.png)
+### Correo duplicado (400)
+```bash
+POST /users/ con email ya existente
+```
+```json
+{ "detail": { "error": true, "message": "El correo 'carlos@devicesystems.com' ya está registrado.", "status_code": 400 } }
+```
+
+### PATCH vacío (400)
+```bash
+PATCH /users/1 con body {}
+```
+```json
+{ "detail": { "error": true, "message": "Debes enviar al menos un campo para actualizar.", "status_code": 400 } }
+```
+
+### Datos inválidos (422)
+```bash
+POST /users/ con email mal formado
+```
+```json
+{ "detail": [ { "loc": ["body", "email"], "msg": "value is not a valid email address", "type": "value_error" } ] }
+```
+
+> **Capturas de errores — pendiente de agregar**
 
 ---
 
+## Dependency Injection con Depends()
 
+FastAPI permite inyectar lógica reutilizable en los endpoints usando `Depends()`.  
+En este proyecto se crearon cuatro dependencias en `app/dependencies/user_dependencies.py`:
 
+**`get_user_or_404(user_id)`** — Busca un usuario por ID y lanza 404 automáticamente si no existe. Se usa en GET, PUT, PATCH y DELETE para no repetir esa lógica en cada endpoint.
 
-### GET /users/?is_active=false — Filtrar por estado
+**`validate_role_param(role)`** — Valida que un parámetro de rol pertenezca a los valores permitidos (admin, support, user). Disponible para cualquier endpoint que filtre por rol.
 
-```http
-GET http://127.0.0.1:8000/users/?role=admin
+**`verify_email_not_duplicated(email, exclude_id)`** — Comprueba que un correo no esté ya registrado, excluyendo opcionalmente al usuario que se está editando (útil en PUT/PATCH).
+
+**`get_api_config()`** — Retorna la configuración general de la API para exponerla en endpoints que necesiten metadatos.
+
+**`simulate_auth(x_api_token)`** — Simula autenticación básica mediante la cabecera `X-API-Token`. Si el token no coincide, devuelve 401.
+
+### Ejemplo de uso en una ruta:
+```python
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user_by_id(
+    response: Response,
+    usuario: dict = Depends(get_user_or_404),   # <-- inyección
+) -> dict:
+    return usuario
 ```
-
-
-![GET ?role=admin](capturas/06_get_filtro_activo.png)
 
 ---
-### POST /users/ — Registrar nuevo usuario
 
-```http
-POST http://127.0.0.1:8000/users/
-Content-Type: application/json
+## Manejo de errores
 
-{
-  "name": "Ana García",
-  "email": "ana@devicesystems.com",
-  "role": "user",
-  "is_active": true
-}
-```
+Todos los errores se controlan con `HTTPException` y devuelven respuestas estructuradas:
 
-**Respuesta 201 Created:**
 ```json
 {
-  "id": 5,
-  "name": "Ana García",
-  "email": "ana@devicesystems.com",
-  "role": "user",
-  "is_active": true
+  "detail": {
+    "error": true,
+    "message": "Descripción del error.",
+    "status_code": 404
+  }
 }
 ```
 
----
-
-## Validaciones y manejo de errores
-
-### Error 409 — Email duplicado
-
-Intentar registrar el mismo correo dos veces retorna:
-
-```json
-{
-  "detail": "El correo 'ana@devicesystems.com' ya está registrado."
-}
-```
----
-
-### Error 422 — Datos inválidos (Pydantic)
-
-Enviar un nombre con menos de 3 caracteres retorna:
-
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "name"],
-      "msg": "String should have at least 3 characters",
-      "type": "string_too_short"
-    }
-  ]
-}
-```
+Los casos controlados son: usuario no encontrado, correo duplicado, rol no permitido, PATCH sin datos y token de autenticación inválido. Los errores de validación de Pydantic (422) los maneja FastAPI automáticamente.
 
 ---
 
-### Error 404 — Usuario no encontrado
+## Reflexión final
 
-```json
-{
-  "detail": "No existe un usuario con ID 99."
-}
-```
-
-
----
+La evolución de la API desde la versión 1.0 a la 2.0 demostró cómo una API básica puede convertirse en una solución más profesional sin cambiar su estructura exterior. Separar la lógica en capas (routes → services → data) hace el código más fácil de mantener y probar. El uso de `Depends()` eliminó código repetido en los endpoints y dejó cada función con una sola responsabilidad. El manejo explícito de errores con respuestas estructuradas también mejoró la claridad para quien consuma la API.
