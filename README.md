@@ -229,4 +229,4 @@ Los casos controlados son: usuario no encontrado, correo duplicado, rol no permi
 
 ---
 
-## link youtube:
+## link youtube crud: https://youtu.be/7Yi1RTKQhjo?si=_gEamOCscnNEqrn6
