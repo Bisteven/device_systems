@@ -85,4 +85,4 @@ Trabajar con persistencia real en una API cambia completamente la naturaleza del
 
 SQLAlchemy simplifica esta integración al permitir trabajar con objetos Python en lugar de escribir SQL directamente, y SQLite hace que el arranque sea inmediato sin necesidad de instalar un servidor de base de datos externo. La separación entre modelo ORM y schema Pydantic también enseña un principio importante: cada capa del sistema debe tener una sola responsabilidad, lo que hace el código más fácil de mantener, probar y escalar.
 
-## link youtube database:
+## link youtube database:https://youtu.be/zTAIvtmuMeQ?si=yXEuJ927ydugG1g8
