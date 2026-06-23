@@ -1,143 +1,271 @@
-# device_systems — API REST con FastAPI + SQLAlchemy + Alembic
+# 📱 DeviceSystem — Sistema de Gestión de Dispositivos y Préstamos
 
-API REST para la gestión de **usuarios**, **dispositivos** y **préstamos** del sistema `device_systems` con relaciones entre modelos, migraciones con Alembic y consultas con joins.
+> API REST construida con **FastAPI**, **SQLAlchemy**, **Alembic** y **SQLite** para gestionar usuarios, dispositivos tecnológicos y préstamos.
+
 
 ---
 
-## Estructura del proyecto
+## Estructura del Proyecto
 
-![Estructura del proyecto](capturas/estructura.png)
+```
+deviceSystem/
+├── alembic/
+│   ├── env.py
+│   └── versions/
+│       └── 001_initial_create_devices_and_loans.py
+├── alembic.ini
+├── app/
+│   ├── database/
+│   │   ├── __init__.py
+│   │   └── connection.py
+│   ├── dependencies/
+│   │   ├── __init__.py
+│   │   └── database_dependency.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user_model.py
+│   │   ├── device_model.py
+│   │   └── loan_model.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── user_routes.py
+│   │   ├── device_routes.py
+│   │   └── loan_routes.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── user_schema.py
+│   │   ├── device_schema.py
+│   │   └── loan_schema.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── user_service.py
+│   │   ├── device_service.py
+│   │   └── loan_service.py
+│   ├── __init__.py
+│   └── main.py
+├── requirements.txt
+└── device_systems.db
+```
+
+---
+
+## Requisitos Previos
+
+- Python 3.10 o superior
+- pip
+- (Opcional) virtualenv o venv
+
+---
+
+## Instalación y Configuración
+
+### 1. Clonar o descomprimir el proyecto
+
+```bash
+# Si tienes el .rar, extráelo y entra a la carpeta
+cd deviceSystem
+```
+
+### 2. Crear y activar un entorno virtual
+
+```bash
+# Crear el entorno virtual
+python -m venv venv
+
+# Activar en Windows
+venv\Scripts\activate
+
+# Activar en Linux/Mac
+source venv/bin/activate
+```
+
+### 3. Instalar dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+El archivo `requirements.txt` incluye:
+
+```
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pydantic
+```
 
 ---
 
 ## Migraciones con Alembic
 
-Al aplicar las migraciones, Alembic crea automáticamente el archivo `device_systems.db` con las tablas `users`, `devices` y `loans`.
+Alembic gestiona los cambios en el esquema de la base de datos de forma controlada y versionada.
 
-### Aplicar migración inicial
+### Paso 1 — Inicializar Alembic
 
-```bash
-python -m alembic upgrade head
-```
-
-![alembic upgrade head](capturas/alembic_upgrade.png)
-
-### Historial de migraciones
+> ⚠️ **Solo la primera vez.** Si el proyecto ya tiene la carpeta `alembic/`, este paso ya fue ejecutado.
 
 ```bash
-python -m alembic history
+alembic init alembic
 ```
 
-![alembic history](capturas/alembic_history.png)
+Esto genera la carpeta `alembic/` y el archivo `alembic.ini`.
+
+![alembic init](capturas/alembicInit.png)
 
 ---
 
-## Pruebas de endpoints
+### Paso 2 — Configurar `alembic.ini` y `env.py`
 
-### POST /users — Crear usuario
-![POST crear usuario](capturas/post_user_ok.png)
+En `alembic.ini`, apunta a tu base de datos:
 
-### POST /devices — Crear dispositivo
-![POST crear dispositivo](capturas/post_device_ok.png)
+```ini
+sqlalchemy.url = sqlite:///./device_systems.db
+```
 
-### POST /devices — Serial duplicado (400)
-![POST serial duplicado](capturas/post_device_duplicado.png)
+En `alembic/env.py`, importa tus modelos para el autogenerate:
 
-### GET /devices — Listar dispositivos
-![GET dispositivos](capturas/get_devices.png)
+```python
+from app.database.connection import Base
+from app.models import user_model, device_model, loan_model
 
-### GET /devices?device_type=laptop — Filtrar por tipo
-![Filtro tipo dispositivo](capturas/get_devices_type.png)
-
-### GET /devices?is_available=true — Filtrar disponibles
-![Filtro disponibles](capturas/get_devices_available.png)
-
-### GET /devices?brand=lenovo — Filtrar por marca
-![Filtro marca](capturas/get_devices_brand.png)
-
-### GET /devices?search=thinkpad — Búsqueda avanzada
-![Búsqueda](capturas/get_devices_search.png)
-
-### POST /loans — Crear préstamo
-![POST crear préstamo](capturas/post_loan_ok.png)
-
-### POST /loans — Dispositivo no disponible (409)
-![POST dispositivo no disponible](capturas/post_loan_conflict.png)
-
-### GET /loans — Listar préstamos
-![GET préstamos](capturas/get_loans.png)
-
-### GET /loans/details — Préstamos con detalle (join)
-![GET préstamos detalle](capturas/get_loans_details.png)
-
-### GET /loans?status=active — Filtrar por estado
-![Filtro estado](capturas/get_loans_status.png)
-
-### GET /loans?device_type=laptop — Filtrar por tipo de dispositivo
-![Filtro tipo en préstamos](capturas/get_loans_device_type.png)
-
-### GET /loans/user/{user_id} — Préstamos de un usuario
-![Préstamos por usuario](capturas/get_loans_by_user.png)
-
-### PATCH /loans/{id}/return — Devolver dispositivo
-![Devolución](capturas/patch_loan_return.png)
-
-### GET /devices/{id} tras devolución — Verificar disponibilidad
-![Dispositivo disponible tras devolución](capturas/get_device_after_return.png)
-
-### GET /loans/device/{device_id} — Historial de préstamos del dispositivo
-![Historial préstamos dispositivo](capturas/get_loans_by_device.png)
+target_metadata = Base.metadata
+```
 
 ---
 
-## Errores controlados
+### Paso 3 — Crear una migración con autogenerate
 
-| Caso | Código |
-|------|:------:|
-| Usuario no encontrado | 404 Not Found |
-| Dispositivo no encontrado | 404 Not Found |
-| Préstamo no encontrado | 404 Not Found |
-| Email duplicado | 400 Bad Request |
-| Número de serie duplicado | 400 Bad Request |
-| Dispositivo no disponible | 409 Conflict |
-| Préstamo ya devuelto | 409 Conflict |
-| Datos inválidos | 422 Unprocessable Entity |
+```bash
+alembic revision --autogenerate -m "initial_create_devices_and_loans"
+```
+
+Alembic detecta automáticamente tus modelos SQLAlchemy y genera el script de migración en `alembic/versions/`.
+
+![alembic revision](capturas/alembic_revision.png)
+---
+
+### Paso 4 — Aplicar la migración
+
+```bash
+alembic upgrade head
+```
+
+Esto aplica todos los cambios pendientes y crea las tablas en la base de datos.
+
+![alembic upgrade](capturas/alembic_upgrade.png)
+---
+
+
+
+## Cómo Ejecutar el Proyecto
+
+Con las migraciones aplicadas, levanta el servidor:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+La API quedará disponible en:
+
+```
+http://127.0.0.1:8000
+```
+
+La documentación interactiva (Swagger UI) en:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+La documentación alternativa (ReDoc) en:
+
+```
+http://127.0.0.1:8000/redoc
+```
+
+![uvicorn run](capturas/servidorTerminal.png)
+
+![Swagger run](capturas/Swagger.png)
 
 ---
 
-## Relaciones entre modelos
+## Endpoints Disponibles
 
-| Relación | Tipo | Implementación |
-|----------|------|----------------|
-| User → Loan | One-to-Many | `relationship("Loan", back_populates="user")` |
-| Device → Loan | One-to-Many | `relationship("Loan", back_populates="device")` |
-| Loan → User | Many-to-One | `ForeignKey("users.id")` |
-| Loan → Device | Many-to-One | `ForeignKey("devices.id")` |
+### 👤 Usuarios — `/users`
 
-Un usuario puede tener muchos préstamos. Un dispositivo puede aparecer en muchos préstamos históricos. Cada préstamo pertenece siempre a un usuario y un dispositivo existentes.
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/users/` | Crear un nuevo usuario |
+| GET | `/users/` | Listar todos los usuarios |
+| GET | `/users/{id}` | Obtener un usuario por ID |
+| PUT | `/users/{id}` | Actualizar un usuario |
+| DELETE | `/users/{id}` | Eliminar un usuario |
+
+### 💻 Dispositivos — `/devices`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/devices/` | Registrar un nuevo dispositivo |
+| GET | `/devices/` | Listar todos los dispositivos |
+| GET | `/devices/{id}` | Obtener un dispositivo por ID |
+| GET | `/devices/?available=true` | Filtrar dispositivos disponibles |
+| PUT | `/devices/{id}` | Actualizar un dispositivo |
+| DELETE | `/devices/{id}` | Eliminar un dispositivo |
+
+### 📦 Préstamos — `/loans`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/loans/` | Crear un nuevo préstamo |
+| GET | `/loans/` | Listar todos los préstamos (con join a users y devices) |
+| GET | `/loans/{id}` | Obtener un préstamo por ID |
+| GET | `/loans/?user_id=1` | Filtrar préstamos por usuario |
+| GET | `/loans/?active=true` | Filtrar préstamos activos |
+| PUT | `/loans/{id}/return` | Registrar la devolución de un dispositivo |
 
 ---
 
-## Diferencia entre modelo SQLAlchemy y schema Pydantic
 
-| | Modelo SQLAlchemy | Schema Pydantic |
-|---|---|---|
-| **¿Qué es?** | Representa la tabla en la base de datos | Representa los datos que entran y salen de la API |
-| **¿Para qué sirve?** | Hablar con la base de datos via ORM | Validar y serializar datos HTTP |
-| **¿Dónde vive?** | `app/models/` | `app/schemas/` |
-| **Hereda de** | `Base` (declarative_base) | `BaseModel` (Pydantic) |
-| **Ejemplo** | `Column(String, nullable=False)` | `Field(..., min_length=3)` |
 
-En resumen: el modelo SQLAlchemy le habla a la base de datos, el schema Pydantic le habla al cliente HTTP. Son capas separadas con responsabilidades distintas.
+### 📸 Pantallazos 7, 8 y 9 — Creación de usuario, dispositivo y préstamo
+
+![Post](capturas/Post.png)
+
+![Post_devices](capturas/Post_devices.png)
+
+![Post_loans](capturas/Post_loans.png)
 
 ---
 
-## Reflexión final
+## Reflexión
 
-Evolucionar una API con relaciones entre modelos, migraciones y consultas con joins representa un salto cualitativo en el desarrollo backend. Las migraciones con Alembic permiten versionar los cambios estructurales de la base de datos de forma controlada, similar a como Git versiona el código fuente: cada cambio queda registrado, es reversible y trazable.
+###  Importancia de las Migraciones con Alembic
 
-Las relaciones entre `User`, `Device` y `Loan` mediante `ForeignKey` y `relationship` garantizan la integridad referencial del sistema: no puede existir un préstamo sin un usuario y un dispositivo válidos. Esto traslada la lógica de negocio al nivel de la base de datos, no solo a la aplicación.
+Las migraciones son fundamentales en el ciclo de vida de cualquier aplicación que use una base de datos relacional. **Alembic** actúa como un sistema de control de versiones para el esquema, permitiendo que múltiples desarrolladores trabajen en el mismo proyecto sin sobrescribirse mutuamente los cambios.
 
-Las consultas con joins eliminan múltiples roundtrips a la base de datos y permiten construir respuestas ricas combinando información de varias tablas en una sola operación eficiente, lo que se traduce directamente en mejor rendimiento y código más limpio.
+Sin migraciones, cualquier modificación al modelo (agregar una columna, cambiar un tipo de dato, crear una nueva tabla) requeriría ejecutar SQL manualmente o borrar y recrear toda la base de datos, perdiendo los datos existentes. Con Alembic, cada cambio queda documentado en un archivo versionado que puede aplicarse o revertirse en cualquier entorno (desarrollo, staging, producción) de forma segura y reproducible.
 
-## Link YouTube proyecto final v1:
+### Importancia de las Relaciones entre Entidades
+
+Las relaciones entre `User`, `Device` y `Loan` son el corazón del sistema. Una relación bien modelada con `ForeignKey` y `relationship()` de SQLAlchemy garantiza la integridad referencial: no puede existir un préstamo sin un usuario y un dispositivo válidos. Esto evita datos huérfanos y errores difíciles de rastrear.
+
+Además, las relaciones habilitan el acceso navegable a datos relacionados desde el ORM (`loan.user.name`, `loan.device.serial_number`), lo que simplifica el código de los servicios y elimina la necesidad de escribir SQL crudo para la mayoría de las consultas.
+
+### Importancia de las Consultas Avanzadas
+
+Las consultas con **joins** permiten consolidar información de múltiples tablas en una sola respuesta, que es exactamente lo que necesita un cliente de la API: un préstamo que traiga consigo nombre del usuario y nombre del dispositivo, sin tener que hacer tres llamadas separadas.
+
+Los **filtros** (`active=true`, `user_id=X`, `available=true`) hacen que la API sea eficiente y útil en escenarios reales, evitando que el cliente descargue todos los datos para filtrarlos en el front-end. Combinados con los joins, las consultas avanzadas son la diferencia entre una API funcional y una API verdaderamente útil y escalable.
+
+---
+
+##  Video de Sustentación
+
+>  **Enlace al video en YouTube:**
+
+**[ Ver video de sustentación del proyecto](https://www.youtube.com/watch?v=XXXXXXXXXXXXXXX)**
+
+
+
+
