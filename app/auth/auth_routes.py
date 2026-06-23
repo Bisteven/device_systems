@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.auth import auth_service
 from app.limiter import limiter
 from app.dependencies.auth_dependency import get_current_active_user
 from app.dependencies.database_dependency import get_db
 from app.models.user_model import User
-from app.schemas.auth_schema import AuthUserResponse, Token, UserLogin, UserRegister
+from app.schemas.auth_schema import AuthUserResponse, Token, UserRegister
 
 router = APIRouter()
 
@@ -39,8 +40,13 @@ def register(request: Request, data: UserRegister, db: Session = Depends(get_db)
     },
 )
 @limiter.limit("5/minute")
-def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
-    user = auth_service.authenticate_user(db, data.email, data.password)
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    # OAuth2 usa "username"; en esta API el username es el email del usuario.
+    user = auth_service.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
