@@ -1,4 +1,4 @@
-# GA1-220501096-01-AA1-EV07 – Fundamentos de FastAPI: API REST para Gestión de Usuarios
+
 
 > API REST para gestión de **usuarios**, **dispositivos** y **préstamos** con **FastAPI**, **SQLAlchemy**, **Alembic**, **OAuth2 + JWT**, **rate limiting**, **CORS**, **middleware personalizado** y **autorización por roles**.
 
