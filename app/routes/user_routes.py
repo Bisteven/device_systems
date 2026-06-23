@@ -1,7 +1,10 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
+from app.limiter import limiter
+from app.dependencies.auth_dependency import get_current_active_user
 from app.dependencies.database_dependency import get_db
+from app.models.user_model import User
 from app.schemas.user_schema import RoleEnum, UserCreate, UserPatch, UserResponse, UserUpdate
 from app.services import user_service
 
@@ -14,14 +17,18 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="Listar usuarios",
     description="Retorna todos los usuarios. Permite filtrar por rol, estado activo y ordenar.",
+    responses={401: {"description": "No autenticado"}, 429: {"description": "Demasiadas solicitudes"}},
 )
+@limiter.limit("30/minute")
 def list_users(
+    request: Request,
     skip: int = Query(default=0, ge=0, description="Registros a omitir"),
     limit: int = Query(default=100, ge=1, le=500, description="Máximo de registros"),
     role: Optional[RoleEnum] = Query(default=None, description="Filtrar por rol"),
     is_active: Optional[bool] = Query(default=None, description="Filtrar por estado activo"),
     order_by: str = Query(default="id", pattern="^(id|name|created_at)$"),
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
 ):
     return user_service.get_users(db, skip=skip, limit=limit, role=role, is_active=is_active, order_by=order_by)
 
@@ -31,9 +38,13 @@ def list_users(
     response_model=UserResponse,
     status_code=status.HTTP_200_OK,
     summary="Obtener usuario por ID",
-    responses={404: {"description": "Usuario no encontrado"}},
+    responses={401: {"description": "No autenticado"}, 404: {"description": "Usuario no encontrado"}},
 )
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
+):
     user = user_service.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail=f"Usuario con id={user_id} no encontrado.")

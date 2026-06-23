@@ -1,7 +1,10 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
+from app.limiter import limiter
+from app.dependencies.auth_dependency import get_current_active_user, require_admin_or_support
 from app.dependencies.database_dependency import get_db
+from app.models.user_model import User
 from app.schemas.loan_schema import LoanCreate, LoanDetailResponse, LoanResponse, LoanStatusEnum
 from app.services import loan_service
 
@@ -14,6 +17,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="Listar préstamos con detalle de usuario y dispositivo",
     description="Retorna préstamos con join de usuario y dispositivo. Soporta filtros por estado, email y tipo.",
+    responses={403: {"description": "Sin permisos"}},
 )
 def list_loans_detail(
     skip: int = Query(default=0, ge=0),
@@ -22,6 +26,7 @@ def list_loans_detail(
     user_email: Optional[str] = Query(default=None, description="Filtrar por email del usuario"),
     device_type: Optional[str] = Query(default=None, description="Filtrar por tipo de dispositivo"),
     db: Session = Depends(get_db),
+    _: User = Depends(require_admin_or_support),
 ):
     return loan_service.get_loans_detail(
         db, skip=skip, limit=limit,
@@ -74,12 +79,20 @@ def get_loan(loan_id: int, db: Session = Depends(get_db)):
     summary="Crear préstamo",
     description="Crea un préstamo validando que el usuario y el dispositivo existan y que el dispositivo esté disponible.",
     responses={
+        401: {"description": "No autenticado"},
         404: {"description": "Usuario o dispositivo no encontrado"},
         409: {"description": "Dispositivo no disponible"},
         422: {"description": "Datos inválidos"},
+        429: {"description": "Demasiadas solicitudes"},
     },
 )
-def create_loan(data: LoanCreate, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def create_loan(
+    request: Request,
+    data: LoanCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
+):
     try:
         return loan_service.create_loan(db, data)
     except LookupError as exc:
@@ -95,11 +108,16 @@ def create_loan(data: LoanCreate, db: Session = Depends(get_db)):
     summary="Devolver dispositivo",
     description="Marca el préstamo como devuelto, registra la fecha de devolución y libera el dispositivo.",
     responses={
+        403: {"description": "Sin permisos"},
         404: {"description": "Préstamo no encontrado"},
         409: {"description": "El préstamo ya fue devuelto"},
     },
 )
-def return_loan(loan_id: int, db: Session = Depends(get_db)):
+def return_loan(
+    loan_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin_or_support),
+):
     try:
         return loan_service.return_loan(db, loan_id)
     except LookupError as exc:

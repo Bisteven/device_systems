@@ -1,7 +1,8 @@
-# 📱 DeviceSystem — Sistema de Gestión de Dispositivos y Préstamos
+# GA1-220501096-01-AA1-EV07 – Fundamentos de FastAPI: API REST para Gestión de Usuarios
 
-> API REST construida con **FastAPI**, **SQLAlchemy**, **Alembic** y **SQLite** para gestionar usuarios, dispositivos tecnológicos y préstamos.
+> API REST para gestión de **usuarios**, **dispositivos** y **préstamos** con **FastAPI**, **SQLAlchemy**, **Alembic**, **OAuth2 + JWT**, **rate limiting**, **CORS**, **middleware personalizado** y **autorización por roles**.
 
+Repositorio: [https://github.com/Bisteven/device_systems.git](https://github.com/Bisteven/device_systems.git)
 
 ---
 
@@ -12,260 +13,449 @@ deviceSystem/
 ├── alembic/
 │   ├── env.py
 │   └── versions/
-│       └── 001_initial_create_devices_and_loans.py
+│       └── 2cbf66178201_add_authentication_fields_to_users.py
 ├── alembic.ini
 ├── app/
+│   ├── auth/
+│   │   ├── auth_routes.py      # POST /register, /login, GET /me
+│   │   ├── auth_service.py
+│   │   └── security.py         # Hash, JWT
 │   ├── database/
-│   │   ├── __init__.py
 │   │   └── connection.py
 │   ├── dependencies/
-│   │   ├── __init__.py
+│   │   ├── auth_dependency.py  # get_current_user, require_admin...
 │   │   └── database_dependency.py
+│   ├── middlewares/
+│   │   └── request_middleware.py
 │   ├── models/
-│   │   ├── __init__.py
 │   │   ├── user_model.py
 │   │   ├── device_model.py
 │   │   └── loan_model.py
 │   ├── routes/
-│   │   ├── __init__.py
 │   │   ├── user_routes.py
 │   │   ├── device_routes.py
 │   │   └── loan_routes.py
 │   ├── schemas/
-│   │   ├── __init__.py
+│   │   ├── auth_schema.py
 │   │   ├── user_schema.py
 │   │   ├── device_schema.py
 │   │   └── loan_schema.py
 │   ├── services/
-│   │   ├── __init__.py
 │   │   ├── user_service.py
 │   │   ├── device_service.py
 │   │   └── loan_service.py
-│   ├── __init__.py
+│   ├── limiter.py
 │   └── main.py
+├── capturas/
+├── .env.example
 ├── requirements.txt
 └── device_systems.db
 ```
+
+![Estructura del proyecto](capturas/estructura.png)
 
 ---
 
 ## Requisitos Previos
 
 - Python 3.10 o superior
-- pip
-- (Opcional) virtualenv o venv
+- pip y entorno virtual (recomendado)
+- Git y GitHub
 
 ---
 
-## Instalación y Configuración
-
-### 1. Clonar o descomprimir el proyecto
+## Instalación
 
 ```bash
-# Si tienes el .rar, extráelo y entra a la carpeta
-cd deviceSystem
-```
-
-### 2. Crear y activar un entorno virtual
-
-```bash
-# Crear el entorno virtual
+git clone https://github.com/Bisteven/device_systems.git
+cd device_systems
 python -m venv venv
-
-# Activar en Windows
-venv\Scripts\activate
-
-# Activar en Linux/Mac
-source venv/bin/activate
-```
-
-### 3. Instalar dependencias
-
-```bash
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
+copy .env.example .env         # Windows
+# Editar .env con SECRET_KEY segura
 ```
 
-El archivo `requirements.txt` incluye:
+![Instalación de dependencias](capturas/01_instalacion.png)
 
-```
-fastapi
-uvicorn
-sqlalchemy
-alembic
-pydantic
-```
+### Variables de entorno (`.env`)
+
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | URL de SQLite o PostgreSQL |
+| `SECRET_KEY` | Clave secreta para firmar JWT |
+| `JWT_ALGORITHM` | Algoritmo JWT (default: HS256) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración del token |
 
 ---
 
-## Migraciones con Alembic
-
-Alembic gestiona los cambios en el esquema de la base de datos de forma controlada y versionada.
-
-### Paso 1 — Inicializar Alembic
-
-> ⚠️ **Solo la primera vez.** Si el proyecto ya tiene la carpeta `alembic/`, este paso ya fue ejecutado.
+## Migraciones Alembic
 
 ```bash
-alembic init alembic
+python -m alembic revision --autogenerate -m "add authentication fields to users"
+python -m alembic upgrade head
 ```
 
-Esto genera la carpeta `alembic/` y el archivo `alembic.ini`.
-
-![alembic init](capturas/alembicInit.png)
-
----
-
-### Paso 2 — Configurar `alembic.ini` y `env.py`
-
-En `alembic.ini`, apunta a tu base de datos:
-
-```ini
-sqlalchemy.url = sqlite:///./device_systems.db
-```
-
-En `alembic/env.py`, importa tus modelos para el autogenerate:
-
-```python
-from app.database.connection import Base
-from app.models import user_model, device_model, loan_model
-
-target_metadata = Base.metadata
-```
-
----
-
-### Paso 3 — Crear una migración con autogenerate
-
-```bash
-alembic revision --autogenerate -m "initial_create_devices_and_loans"
-```
-
-Alembic detecta automáticamente tus modelos SQLAlchemy y genera el script de migración en `alembic/versions/`.
+La migración `2cbf66178201` crea las tablas `users`, `devices` y `loans`, incluyendo el campo `hashed_password` en usuarios.
 
 ![alembic revision](capturas/alembic_revision.png)
+
+![alembic upgrade head](capturas/alembic_upgrade.png)
+
+![Historial de migraciones](capturas/alembic_history.png)
+
 ---
 
-### Paso 4 — Aplicar la migración
+## Ejecutar la API
 
 ```bash
-alembic upgrade head
+python -m uvicorn app.main:app --reload
 ```
 
-Esto aplica todos los cambios pendientes y crea las tablas en la base de datos.
+- API: http://127.0.0.1:8000
+- Swagger: http://127.0.0.1:8000/docs
+- ReDoc: http://127.0.0.1:8000/redoc
 
-![alembic upgrade](capturas/alembic_upgrade.png)
+![Servidor corriendo](capturas/servidorTerminal.png)
+
 ---
 
+## Swagger / OpenAPI
 
+Metadatos configurados:
 
-## Cómo Ejecutar el Proyecto
+```python
+FastAPI(
+    title="device_systems API",
+    description="API REST segura para gestión de usuarios, dispositivos y préstamos",
+    version="3.0.0",
+)
+```
 
-Con las migraciones aplicadas, levanta el servidor:
+Tags: **Auth**, **Users**, **Devices**, **Loans**, **Security**
+
+Para probar endpoints protegidos en Swagger:
+1. Hacer login en `/auth/login`
+2. Clic en **Authorize**
+3. Pegar el token: `Bearer <access_token>`
+
+![Swagger UI general](capturas/Swagger.png)
+
+![Swagger con OAuth2 Authorize](capturas/swagger_authorize.png)
+
+---
+
+## Autenticación OAuth2 + JWT
+
+### Registro — `POST /auth/register`
+
+```json
+{
+  "name": "Ana Pérez",
+  "email": "ana@sena.edu.co",
+  "password": "MiClave123",
+  "role": "user"
+}
+```
+
+**Validaciones de contraseña:**
+- Mínimo 8 caracteres
+- Al menos una mayúscula, una minúscula y un número
+- Sin espacios en blanco
+
+**Roles permitidos:** `admin`, `support`, `user`
+
+![Registro de usuario](capturas/auth_register.png)
+
+### Login — `POST /auth/login`
+
+```json
+{
+  "email": "ana@sena.edu.co",
+  "password": "MiClave123"
+}
+```
+
+**Respuesta:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer"
+}
+```
+
+![Login exitoso](capturas/auth_login.png)
+
+### Perfil — `GET /auth/me`
+
+Enviar cabecera: `Authorization: Bearer <token>`
+
+![Perfil del usuario autenticado](capturas/auth_me.png)
+
+---
+
+## Protección de Rutas
+
+| Ruta | Protección |
+|------|------------|
+| `GET /users` | Usuario autenticado |
+| `GET /users/{id}` | Usuario autenticado |
+| `POST /devices` | Admin o support |
+| `PUT /devices/{id}` | Admin o support |
+| `DELETE /devices/{id}` | Admin |
+| `POST /loans` | Usuario autenticado |
+| `PATCH /loans/{id}/return` | Admin o support |
+| `GET /loans/details` | Admin o support |
+
+| Código | Situación |
+|--------|-----------|
+| **401** | Token ausente, inválido o expirado |
+| **403** | Token válido pero sin permisos de rol |
+
+![Acceso sin token — 401](capturas/proteccion_401.png)
+
+![Usuario sin permisos — 403](capturas/proteccion_403.png)
+
+---
+
+## Pruebas de Endpoints — Usuarios
+
+### GET /users/ — Listar todos los usuarios
+
+![GET /users/](capturas/04_get_users.png)
+
+### GET /users/{user_id} — Obtener usuario por ID
+
+![GET /users/1](capturas/05_get_user_id.png)
+
+### GET /users/?role=admin — Filtrar por rol
+
+![GET ?role=admin](capturas/06_get_filtro_activo.png)
+
+### POST /users/ — Crear usuario
+
+![POST crear usuario](capturas/Post.png)
+
+![POST crear usuario — respuesta 201](capturas/post_user_ok.png)
+
+---
+
+## Pruebas de Endpoints — Dispositivos
+
+### POST /devices — Crear dispositivo
+
+![POST crear dispositivo](capturas/Post_devices.png)
+
+![POST crear dispositivo — respuesta 201](capturas/post_device_ok.png)
+
+### POST /devices — Serial duplicado (400)
+
+![POST serial duplicado](capturas/post_device_duplicado.png)
+
+### GET /devices — Listar dispositivos
+
+![GET dispositivos](capturas/get_devices.png)
+
+### GET /devices?device_type=laptop — Filtrar por tipo
+
+![Filtro tipo dispositivo](capturas/get_devices_type.png)
+
+### GET /devices?is_available=true — Filtrar disponibles
+
+![Filtro disponibles](capturas/get_devices_available.png)
+
+### GET /devices?brand=lenovo — Filtrar por marca
+
+![Filtro marca](capturas/get_devices_brand.png)
+
+### GET /devices?search=thinkpad — Búsqueda avanzada
+
+![Búsqueda](capturas/get_devices_search.png)
+
+---
+
+## Pruebas de Endpoints — Préstamos
+
+### POST /loans — Crear préstamo
+
+![POST crear préstamo](capturas/Post_loans.png)
+
+![POST crear préstamo — respuesta 201](capturas/post_loan_ok.png)
+
+### POST /loans — Dispositivo no disponible (409)
+
+![POST dispositivo no disponible](capturas/post_loan_conflict.png)
+
+### GET /loans — Listar préstamos
+
+![GET préstamos](capturas/get_loans.png)
+
+### GET /loans/details — Préstamos con detalle (join)
+
+![GET préstamos detalle](capturas/get_loans_details.png)
+
+### GET /loans?status=active — Filtrar por estado
+
+![Filtro estado](capturas/get_loans_status.png)
+
+### GET /loans?device_type=laptop — Filtrar por tipo de dispositivo
+
+![Filtro tipo en préstamos](capturas/get_loans_device_type.png)
+
+### GET /loans/user/{user_id} — Préstamos de un usuario
+
+![Préstamos por usuario](capturas/get_loans_by_user.png)
+
+### PATCH /loans/{id}/return — Devolver dispositivo
+
+![Devolución](capturas/patch_loan_return.png)
+
+### GET /devices/{id} tras devolución — Verificar disponibilidad
+
+![Dispositivo disponible tras devolución](capturas/get_device_after_return.png)
+
+### GET /loans/device/{device_id} — Historial de préstamos del dispositivo
+
+![Historial préstamos dispositivo](capturas/get_loans_by_device.png)
+
+---
+
+## CORS
+
+Configurado en `app/main.py` para desarrollo:
+
+```python
+allow_origins=["http://localhost:5173", "http://localhost:3000"]
+allow_credentials=True
+```
+
+### ¿Por qué no usar `"*"` en producción con credenciales?
+
+Cuando `allow_credentials=True`, el navegador envía cookies y cabeceras de autenticación. Si `allow_origins` fuera `"*"`, **cualquier sitio web malicioso** podría hacer peticiones autenticadas en nombre del usuario (ataques CSRF cross-origin). En producción se debe listar explícitamente cada dominio frontend confiable.
+
+---
+
+## Middleware Personalizado
+
+Cada respuesta incluye:
+
+| Cabecera | Ejemplo | Descripción |
+|----------|---------|-------------|
+| `X-App-Name` | `device_systems` | Nombre de la aplicación |
+| `X-Process-Time` | `0.0042` | Tiempo de procesamiento (segundos) |
+| `X-Request-ID` | `8f42e9c1` | ID único de la petición |
+
+Además se registra en consola: método, ruta, código HTTP y tiempo.
+
+![Cabeceras del middleware](capturas/middleware_headers.png)
+
+---
+
+## Rate Limiting (slowapi)
+
+| Endpoint | Límite |
+|----------|--------|
+| `POST /auth/login` | 5 / minuto |
+| `POST /auth/register` | 3 / minuto |
+| `GET /users` | 30 / minuto |
+| `POST /loans` | 10 / minuto |
+
+Al superar el límite: **429 Too Many Requests**
+
+### Prueba de rate limiting
 
 ```bash
-uvicorn app.main:app --reload
+# PowerShell — repetir login rápidamente
+1..6 | ForEach-Object {
+  Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/auth/login `
+    -ContentType "application/json" `
+    -Body '{"email":"admin@test.com","password":"Admin1234"}' `
+    -ErrorAction SilentlyContinue
+}
 ```
 
-La API quedará disponible en:
+La sexta solicitud debe responder **429**.
 
-```
-http://127.0.0.1:8000
-```
-
-La documentación interactiva (Swagger UI) en:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-La documentación alternativa (ReDoc) en:
-
-```
-http://127.0.0.1:8000/redoc
-```
-
-![uvicorn run](capturas/servidorTerminal.png)
-
-![Swagger run](capturas/Swagger.png)
+![Rate limiting — 429](capturas/rate_limit_429.png)
 
 ---
 
-## Endpoints Disponibles
+## Pruebas Funcionales Documentadas
 
-### 👤 Usuarios — `/users`
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/users/` | Crear un nuevo usuario |
-| GET | `/users/` | Listar todos los usuarios |
-| GET | `/users/{id}` | Obtener un usuario por ID |
-| PUT | `/users/{id}` | Actualizar un usuario |
-| DELETE | `/users/{id}` | Eliminar un usuario |
-
-### 💻 Dispositivos — `/devices`
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/devices/` | Registrar un nuevo dispositivo |
-| GET | `/devices/` | Listar todos los dispositivos |
-| GET | `/devices/{id}` | Obtener un dispositivo por ID |
-| GET | `/devices/?available=true` | Filtrar dispositivos disponibles |
-| PUT | `/devices/{id}` | Actualizar un dispositivo |
-| DELETE | `/devices/{id}` | Eliminar un dispositivo |
-
-### 📦 Préstamos — `/loans`
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/loans/` | Crear un nuevo préstamo |
-| GET | `/loans/` | Listar todos los préstamos (con join a users y devices) |
-| GET | `/loans/{id}` | Obtener un préstamo por ID |
-| GET | `/loans/?user_id=1` | Filtrar préstamos por usuario |
-| GET | `/loans/?active=true` | Filtrar préstamos activos |
-| PUT | `/loans/{id}/return` | Registrar la devolución de un dispositivo |
+| # | Prueba | Resultado esperado |
+|---|--------|-------------------|
+| 1 | Registro de usuario | 201 Created |
+| 2 | Registro con contraseña débil | 422 Unprocessable Entity |
+| 3 | Registro con email duplicado | 400 Bad Request |
+| 4 | Login correcto | 200 + token JWT |
+| 5 | Login con contraseña incorrecta | 401 Unauthorized |
+| 6 | Consulta `/auth/me` | 200 + datos del usuario |
+| 7 | Ruta protegida sin token | 401 Unauthorized |
+| 8 | Token inválido | 401 Unauthorized |
+| 9 | Usuario sin permisos (ej. `user` → DELETE device) | 403 Forbidden |
+| 10 | Crear dispositivo con rol `admin`/`support` | 201 Created |
+| 11 | Eliminar dispositivo con rol `user` | 403 Forbidden |
+| 12 | CORS desde origen permitido | Cabeceras CORS presentes |
+| 13 | Cabeceras del middleware | X-App-Name, X-Process-Time, X-Request-ID |
+| 14 | Rate limiting activado | 429 Too Many Requests |
+| 15 | Swagger/OpenAPI | OAuth2 Bearer visible en `/docs` |
 
 ---
 
+## Errores Controlados
 
-
-### 📸 Pantallazos 7, 8 y 9 — Creación de usuario, dispositivo y préstamo
-
-![Post](capturas/Post.png)
-
-![Post_devices](capturas/Post_devices.png)
-
-![Post_loans](capturas/Post_loans.png)
-
----
-
-## Reflexión
-
-###  Importancia de las Migraciones con Alembic
-
-Las migraciones son fundamentales en el ciclo de vida de cualquier aplicación que use una base de datos relacional. **Alembic** actúa como un sistema de control de versiones para el esquema, permitiendo que múltiples desarrolladores trabajen en el mismo proyecto sin sobrescribirse mutuamente los cambios.
-
-Sin migraciones, cualquier modificación al modelo (agregar una columna, cambiar un tipo de dato, crear una nueva tabla) requeriría ejecutar SQL manualmente o borrar y recrear toda la base de datos, perdiendo los datos existentes. Con Alembic, cada cambio queda documentado en un archivo versionado que puede aplicarse o revertirse en cualquier entorno (desarrollo, staging, producción) de forma segura y reproducible.
-
-### Importancia de las Relaciones entre Entidades
-
-Las relaciones entre `User`, `Device` y `Loan` son el corazón del sistema. Una relación bien modelada con `ForeignKey` y `relationship()` de SQLAlchemy garantiza la integridad referencial: no puede existir un préstamo sin un usuario y un dispositivo válidos. Esto evita datos huérfanos y errores difíciles de rastrear.
-
-Además, las relaciones habilitan el acceso navegable a datos relacionados desde el ORM (`loan.user.name`, `loan.device.serial_number`), lo que simplifica el código de los servicios y elimina la necesidad de escribir SQL crudo para la mayoría de las consultas.
-
-### Importancia de las Consultas Avanzadas
-
-Las consultas con **joins** permiten consolidar información de múltiples tablas en una sola respuesta, que es exactamente lo que necesita un cliente de la API: un préstamo que traiga consigo nombre del usuario y nombre del dispositivo, sin tener que hacer tres llamadas separadas.
-
-Los **filtros** (`active=true`, `user_id=X`, `available=true`) hacen que la API sea eficiente y útil en escenarios reales, evitando que el cliente descargue todos los datos para filtrarlos en el front-end. Combinados con los joins, las consultas avanzadas son la diferencia entre una API funcional y una API verdaderamente útil y escalable.
+| Caso | Código |
+|------|:------:|
+| Usuario no encontrado | 404 Not Found |
+| Dispositivo no encontrado | 404 Not Found |
+| Préstamo no encontrado | 404 Not Found |
+| Email duplicado | 400 Bad Request |
+| Número de serie duplicado | 400 Bad Request |
+| Dispositivo no disponible | 409 Conflict |
+| Préstamo ya devuelto | 409 Conflict |
+| Datos inválidos | 422 Unprocessable Entity |
+| Token ausente o inválido | 401 Unauthorized |
+| Sin permisos de rol | 403 Forbidden |
+| Límite de peticiones excedido | 429 Too Many Requests |
 
 ---
 
-##  Video de Sustentación
+## Relaciones entre Modelos
 
->  **Enlace al video en YouTube:**
+| Relación | Tipo | Implementación |
+|----------|------|----------------|
+| User → Loan | One-to-Many | `relationship("Loan", back_populates="user")` |
+| Device → Loan | One-to-Many | `relationship("Loan", back_populates="device")` |
+| Loan → User | Many-to-One | `ForeignKey("users.id")` |
+| Loan → Device | Many-to-One | `ForeignKey("devices.id")` |
 
-**[ Ver video de sustentación del proyecto](https://www.youtube.com/watch?v=XXXXXXXXXXXXXXX)**
+Un usuario puede tener muchos préstamos. Un dispositivo puede aparecer en muchos préstamos históricos. Cada préstamo pertenece siempre a un usuario y un dispositivo existentes.
 
+---
 
+## Diferencia entre Modelo SQLAlchemy y Schema Pydantic
 
+| | Modelo SQLAlchemy | Schema Pydantic |
+|---|---|---|
+| **¿Qué es?** | Representa la tabla en la base de datos | Representa los datos que entran y salen de la API |
+| **¿Para qué sirve?** | Hablar con la base de datos via ORM | Validar y serializar datos HTTP |
+| **¿Dónde vive?** | `app/models/` | `app/schemas/` |
+| **Hereda de** | `Base` (declarative_base) | `BaseModel` (Pydantic) |
+| **Ejemplo** | `Column(String, nullable=False)` | `Field(..., min_length=3)` |
 
+En resumen: el modelo SQLAlchemy le habla a la base de datos, el schema Pydantic le habla al cliente HTTP. Son capas separadas con responsabilidades distintas.
+
+---
+
+## Reflexión: Importancia de la Seguridad en APIs REST
+
+Una API sin autenticación expone datos sensibles a cualquier cliente. Con **OAuth2 + JWT** garantizamos que solo usuarios identificados accedan a recursos protegidos. El **hash de contraseñas** con passlib/bcrypt evita almacenar credenciales en texto plano. La **autorización por roles** limita acciones críticas (eliminar dispositivos solo para admin). El **rate limiting** mitiga fuerza bruta y abuso de endpoints. **CORS** restringe qué frontends pueden consumir la API con credenciales. El **middleware** aporta trazabilidad (request ID, tiempos) esencial para auditoría y depuración en producción.
+
+La seguridad no es un paso opcional al final del desarrollo: debe integrarse desde el diseño, porque un fallo en autenticación o autorización compromete toda la aplicación y la confianza de los usuarios.
+
+---
+
+## Video de Sustentación
+
+**[Ver video de sustentación del proyecto](https://youtu.be/2oKAhmgjJm0)**

@@ -1,7 +1,9 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from app.dependencies.auth_dependency import require_admin, require_admin_or_support
 from app.dependencies.database_dependency import get_db
+from app.models.user_model import User
 from app.schemas.device_schema import DeviceCreate, DevicePatch, DeviceResponse, DeviceTypeEnum, DeviceUpdate
 from app.services import device_service
 
@@ -50,9 +52,17 @@ def get_device(device_id: int, db: Session = Depends(get_db)):
     response_model=DeviceResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crear dispositivo",
-    responses={400: {"description": "Número de serie duplicado"}, 422: {"description": "Datos inválidos"}},
+    responses={
+        400: {"description": "Número de serie duplicado"},
+        403: {"description": "Sin permisos"},
+        422: {"description": "Datos inválidos"},
+    },
 )
-def create_device(data: DeviceCreate, db: Session = Depends(get_db)):
+def create_device(
+    data: DeviceCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin_or_support),
+):
     try:
         return device_service.create_device(db, data)
     except ValueError as exc:
@@ -64,9 +74,18 @@ def create_device(data: DeviceCreate, db: Session = Depends(get_db)):
     response_model=DeviceResponse,
     status_code=status.HTTP_200_OK,
     summary="Actualizar dispositivo completo",
-    responses={400: {"description": "Serial duplicado"}, 404: {"description": "No encontrado"}},
+    responses={
+        400: {"description": "Serial duplicado"},
+        403: {"description": "Sin permisos"},
+        404: {"description": "No encontrado"},
+    },
 )
-def update_device(device_id: int, data: DeviceUpdate, db: Session = Depends(get_db)):
+def update_device(
+    device_id: int,
+    data: DeviceUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin_or_support),
+):
     try:
         return device_service.update_device(db, device_id, data)
     except LookupError as exc:
@@ -95,9 +114,13 @@ def patch_device(device_id: int, data: DevicePatch, db: Session = Depends(get_db
     "/{device_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar dispositivo",
-    responses={404: {"description": "No encontrado"}},
+    responses={403: {"description": "Sin permisos"}, 404: {"description": "No encontrado"}},
 )
-def delete_device(device_id: int, db: Session = Depends(get_db)):
+def delete_device(
+    device_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     try:
         device_service.delete_device(db, device_id)
     except LookupError as exc:

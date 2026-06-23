@@ -6,8 +6,8 @@ from pydantic import BaseModel, EmailStr, Field
 
 class RoleEnum(str, Enum):
     admin = "admin"
+    support = "support"
     user = "user"
-    moderator = "moderator"
 
 
 class UserBase(BaseModel):

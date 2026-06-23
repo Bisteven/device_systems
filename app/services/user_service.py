@@ -1,5 +1,7 @@
 from typing import List, Optional
+import secrets
 from sqlalchemy.orm import Session
+from app.auth.security import get_password_hash
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate, UserPatch, UserUpdate
 
@@ -7,7 +9,13 @@ from app.schemas.user_schema import UserCreate, UserPatch, UserUpdate
 def create_user(db: Session, data: UserCreate) -> User:
     if get_user_by_email(db, data.email):
         raise ValueError(f"El email '{data.email}' ya está registrado.")
-    user = User(name=data.name, email=data.email, role=data.role, is_active=data.is_active)
+    user = User(
+        name=data.name,
+        email=data.email,
+        hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+        role=data.role,
+        is_active=data.is_active,
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
