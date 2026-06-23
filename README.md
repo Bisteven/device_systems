@@ -215,7 +215,7 @@ Enviar cabecera: `Authorization: Bearer <token>`
 
 ![Acceso sin token — 401](capturas/proteccion_401.png)
 
-![Usuario sin permisos — 403](capturas/proteccion_403.png)
+
 
 ---
 
@@ -237,7 +237,7 @@ Enviar cabecera: `Authorization: Bearer <token>`
 
 ![POST crear usuario](capturas/Post.png)
 
-![POST crear usuario — respuesta 201](capturas/post_user_ok.png)
+
 
 ---
 
@@ -247,31 +247,6 @@ Enviar cabecera: `Authorization: Bearer <token>`
 
 ![POST crear dispositivo](capturas/Post_devices.png)
 
-![POST crear dispositivo — respuesta 201](capturas/post_device_ok.png)
-
-### POST /devices — Serial duplicado (400)
-
-![POST serial duplicado](capturas/post_device_duplicado.png)
-
-### GET /devices — Listar dispositivos
-
-![GET dispositivos](capturas/get_devices.png)
-
-### GET /devices?device_type=laptop — Filtrar por tipo
-
-![Filtro tipo dispositivo](capturas/get_devices_type.png)
-
-### GET /devices?is_available=true — Filtrar disponibles
-
-![Filtro disponibles](capturas/get_devices_available.png)
-
-### GET /devices?brand=lenovo — Filtrar por marca
-
-![Filtro marca](capturas/get_devices_brand.png)
-
-### GET /devices?search=thinkpad — Búsqueda avanzada
-
-![Búsqueda](capturas/get_devices_search.png)
 
 ---
 
@@ -281,45 +256,7 @@ Enviar cabecera: `Authorization: Bearer <token>`
 
 ![POST crear préstamo](capturas/Post_loans.png)
 
-![POST crear préstamo — respuesta 201](capturas/post_loan_ok.png)
 
-### POST /loans — Dispositivo no disponible (409)
-
-![POST dispositivo no disponible](capturas/post_loan_conflict.png)
-
-### GET /loans — Listar préstamos
-
-![GET préstamos](capturas/get_loans.png)
-
-### GET /loans/details — Préstamos con detalle (join)
-
-![GET préstamos detalle](capturas/get_loans_details.png)
-
-### GET /loans?status=active — Filtrar por estado
-
-![Filtro estado](capturas/get_loans_status.png)
-
-### GET /loans?device_type=laptop — Filtrar por tipo de dispositivo
-
-![Filtro tipo en préstamos](capturas/get_loans_device_type.png)
-
-### GET /loans/user/{user_id} — Préstamos de un usuario
-
-![Préstamos por usuario](capturas/get_loans_by_user.png)
-
-### PATCH /loans/{id}/return — Devolver dispositivo
-
-![Devolución](capturas/patch_loan_return.png)
-
-### GET /devices/{id} tras devolución — Verificar disponibilidad
-
-![Dispositivo disponible tras devolución](capturas/get_device_after_return.png)
-
-### GET /loans/device/{device_id} — Historial de préstamos del dispositivo
-
-![Historial préstamos dispositivo](capturas/get_loans_by_device.png)
-
----
 
 ## CORS
 
@@ -375,9 +312,6 @@ Al superar el límite: **429 Too Many Requests**
 }
 ```
 
-La sexta solicitud debe responder **429**.
-
-![Rate limiting — 429](capturas/rate_limit_429.png)
 
 ---
 
@@ -458,4 +392,5 @@ La seguridad no es un paso opcional al final del desarrollo: debe integrarse des
 
 ## Video de Sustentación
 
-**[Ver video de sustentación del proyecto](https://youtu.be/2oKAhmgjJm0)**
+**[Ver video de sustentación del proyecto [Proyecto-Final-v2] GA1-220501096-01-AA1-EV11 – FastAPI Seguridad: Autenticación, Middleware, CORS, Rate Limiting y Validación Avanzada en device_systems](xxxxx)**
+
