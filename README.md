@@ -76,7 +76,7 @@ copy .env.example .env         # Windows
 # Editar .env con SECRET_KEY segura
 ```
 
-![Instalación de dependencias](capturas/01_instalacion.png)
+
 
 ### Variables de entorno (`.env`)
 
