@@ -262,10 +262,7 @@ Los **filtros** (`active=true`, `user_id=X`, `available=true`) hacen que la API 
 
 ##  Video de Sustentación
 
->  **Enlace al video en YouTube:**
-
-**[ Ver video de sustentación del proyecto](https://www.youtube.com/watch?v=XXXXXXXXXXXXXXX)**
-
+>  **Enlace al video en YouTube: https://youtu.be/pEk1myumM08?si=a6Fe_NYpyE-aAREf
 
 
 
