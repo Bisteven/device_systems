@@ -392,5 +392,4 @@ La seguridad no es un paso opcional al final del desarrollo: debe integrarse des
 
 ## Video de Sustentación
 
-**[Ver video de sustentación del proyecto [Proyecto-Final-v2] GA1-220501096-01-AA1-EV11 – FastAPI Seguridad: Autenticación, Middleware, CORS, Rate Limiting y Validación Avanzada en device_systems](xxxxx)**
-
+https://youtu.be/7KILPymi-L4?si=DeFHlkk_P03DePzG
